@@ -109,10 +109,7 @@ impl SpringRecord {
         }
         springs.extend(self.springs.clone());
 
-        SpringRecord::new(
-            springs,
-            self.damaged_groups.repeat(n),
-        )
+        SpringRecord::new(springs, self.damaged_groups.repeat(n))
     }
 }
 
@@ -192,19 +189,18 @@ impl CachedSolver {
                         return 0;
                     }
                 }
-            },
+            }
             Spring::Damaged => {
                 if current >= group_size {
                     // This group is bigger than the expected size
                     return 0;
                 } else {
-                    return self.solve(rest, groups, current + 1)
+                    return self.solve(rest, groups, current + 1);
                 }
-            },
+            }
             Spring::Unknown => {
                 if current == 0 {
-                    return
-                        self.solve(rest, groups, 1)  // if this is damaged
+                    return self.solve(rest, groups, 1)  // if this is damaged
                         + self.solve(rest, groups, 0); // if this is fine
                 } else if current == group_size {
                     // Finished the group of damaged springs - move to next one.
