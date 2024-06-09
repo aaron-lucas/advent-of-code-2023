@@ -9,6 +9,7 @@ mod day11;
 mod day12;
 mod day13;
 mod day14;
+mod day15;
 mod day7;
 mod day8;
 mod day9;
@@ -36,6 +37,7 @@ fn main() {
         Box::new(day12::Day12::default()),
         Box::new(day13::Day13::default()),
         Box::new(day14::Day14::default()),
+        Box::new(day15::Day15::default()),
     ];
 
     let args = Args::parse();

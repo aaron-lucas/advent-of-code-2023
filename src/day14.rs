@@ -1,12 +1,12 @@
-use crate::challenge::DailyChallenge;
-use std::ops::{Deref, DerefMut, Index, IndexMut, Range};
+use crate::challenge::{DailyChallenge, Solver};
 use std::collections::hash_map::DefaultHasher;
-use std::hash::{Hash, Hasher};
-use std::{fs, io};
-use std::path::Path;
-use std::str::FromStr;
 use std::error::Error;
 use std::fmt::{self, Debug, Write};
+use std::hash::{Hash, Hasher};
+use std::ops::{Deref, DerefMut, Index, IndexMut, Range};
+use std::path::Path;
+use std::str::FromStr;
+use std::{fs, io};
 
 #[derive(Default)]
 pub struct Day14;
@@ -30,7 +30,7 @@ impl fmt::Display for Day14Error {
         use Day14Error as E;
         match self {
             E::InvalidRock => write!(f, "Invalid rock"),
-            E::IOError(e) => std::fmt::Display::fmt(&e, f)
+            E::IOError(e) => std::fmt::Display::fmt(&e, f),
         }
     }
 }
@@ -83,10 +83,22 @@ struct Coord {
 impl Coord {
     fn from_gravity(cross_idx: usize, grav_idx: usize, direction: Direction, size: usize) -> Self {
         match direction {
-            Direction::North => Coord { row: grav_idx, col: cross_idx },
-            Direction::South => Coord { row: size - grav_idx - 1, col: cross_idx },
-            Direction::East => Coord { row: cross_idx, col: size - grav_idx - 1 },
-            Direction::West => Coord { row: cross_idx, col: grav_idx },
+            Direction::North => Coord {
+                row: grav_idx,
+                col: cross_idx,
+            },
+            Direction::South => Coord {
+                row: size - grav_idx - 1,
+                col: cross_idx,
+            },
+            Direction::East => Coord {
+                row: cross_idx,
+                col: size - grav_idx - 1,
+            },
+            Direction::West => Coord {
+                row: cross_idx,
+                col: grav_idx,
+            },
         }
     }
 }
@@ -96,7 +108,6 @@ struct Platform {
     rocks: Vec<Vec<Rock>>,
     size: usize,
 }
-
 
 impl Platform {
     fn tilt(&mut self, direction: Direction) {
@@ -109,23 +120,34 @@ impl Platform {
                 match self[coord] {
                     Rock::Round => round_rocks += 1,
                     Rock::Cube => {
-                        self._apply_partial_gravity(direction, round_rocks, cross_idx, bottom..grav_idx);
+                        self._apply_partial_gravity(
+                            direction,
+                            round_rocks,
+                            cross_idx,
+                            bottom..grav_idx,
+                        );
                         bottom = grav_idx + 1;
                         round_rocks = 0;
-                    },
-                    Rock::Empty => {},
+                    }
+                    Rock::Empty => {}
                 }
             }
             self._apply_partial_gravity(direction, round_rocks, cross_idx, bottom..self.size)
         }
     }
 
-    fn _apply_partial_gravity(&mut self, direction: Direction, round_rocks: usize, cross_idx: usize, grav_idxs: Range<usize>) {
+    fn _apply_partial_gravity(
+        &mut self,
+        direction: Direction,
+        round_rocks: usize,
+        cross_idx: usize,
+        grav_idxs: Range<usize>,
+    ) {
         let mut remaining = round_rocks;
         for grav_idx in grav_idxs {
             let coord = Coord::from_gravity(cross_idx, grav_idx, direction, self.size);
             self[coord] = if remaining > 0 {
-                remaining -=1 ;
+                remaining -= 1;
                 Rock::Round
             } else {
                 Rock::Empty
@@ -200,9 +222,13 @@ impl FromIterator<Vec<Rock>> for Platform {
 impl FromStr for Platform {
     type Err = Day14Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        s.split_whitespace().map(|line| {
-            line.chars().map(|c| Rock::try_from(c)).collect::<Result<Vec<Rock>, Day14Error>>()
-        }).collect()
+        s.split_whitespace()
+            .map(|line| {
+                line.chars()
+                    .map(|c| Rock::try_from(c))
+                    .collect::<Result<Vec<Rock>, Day14Error>>()
+            })
+            .collect()
     }
 }
 
@@ -217,13 +243,6 @@ impl IndexMut<Coord> for Platform {
     fn index_mut(&mut self, index: Coord) -> &mut Self::Output {
         &mut self.rocks[index.row][index.col]
     }
-}
-
-trait Solver {
-    type Input;
-    type Output;
-
-    fn solve(&self, item: &Self::Input) -> Self::Output;
 }
 
 struct Part1;
@@ -271,7 +290,10 @@ impl Solver for Part2 {
             let state_hash = platform.state_hash();
 
             if let Some(first) = first_observations.iter().position(|&h| h == state_hash) {
-                let cycle = Cycle { offset: first, length: iteration - first };
+                let cycle = Cycle {
+                    offset: first,
+                    length: iteration - first,
+                };
                 break Some(cycle);
             };
 
@@ -282,14 +304,14 @@ impl Solver for Part2 {
         };
 
         let final_platform = match cycle {
-            Some(Cycle { offset, length } ) => {
+            Some(Cycle { offset, length }) => {
                 let equivalent_iterations = offset + ((self.iterations - offset) % length);
                 let mut platform = Platform::clone(item);
                 for _ in 0..equivalent_iterations {
                     platform.cycle();
                 }
                 platform
-            },
+            }
             None => platform,
         };
 
@@ -312,19 +334,28 @@ impl DailyChallenge for Day14 {
 
 #[test]
 fn test_part1() {
-    let platform: Platform = fs::read_to_string(Path::new("data/14.sample")).unwrap().parse().unwrap();
+    let platform: Platform = fs::read_to_string(Path::new("data/14.sample"))
+        .unwrap()
+        .parse()
+        .unwrap();
     assert_eq!(Part1.solve(&platform), 136)
 }
 
 #[test]
 fn test_part2() {
-    let platform: Platform = fs::read_to_string(Path::new("data/14.sample")).unwrap().parse().unwrap();
+    let platform: Platform = fs::read_to_string(Path::new("data/14.sample"))
+        .unwrap()
+        .parse()
+        .unwrap();
     assert_eq!(Part2::new(1_000_000_000).solve(&platform), 64)
 }
 
 #[test]
 fn test_tilt_north() {
-    let mut platform: Platform = fs::read_to_string(Path::new("data/14.sample")).unwrap().parse().unwrap();
+    let mut platform: Platform = fs::read_to_string(Path::new("data/14.sample"))
+        .unwrap()
+        .parse()
+        .unwrap();
     let tilted = "
 OOOO.#.O..
 OO..#....#
@@ -335,16 +366,20 @@ O..#.OO...
 ..O..#.O.O
 ..O.......
 #....###..
-#....#....".parse().unwrap();
+#....#...."
+        .parse()
+        .unwrap();
 
     platform.tilt(Direction::North);
     assert_eq!(platform, tilted)
-
 }
 
 #[test]
 fn test_tilt_west() {
-    let mut platform: Platform = fs::read_to_string(Path::new("data/14.sample")).unwrap().parse().unwrap();
+    let mut platform: Platform = fs::read_to_string(Path::new("data/14.sample"))
+        .unwrap()
+        .parse()
+        .unwrap();
     let tilted = "
 O....#....
 OOO.#....#
@@ -355,16 +390,20 @@ O.#O...#.#
 O....#OO..
 O.........
 #....###..
-#OO..#....".parse().unwrap();
+#OO..#...."
+        .parse()
+        .unwrap();
 
     platform.tilt(Direction::West);
     assert_eq!(platform, tilted)
-
 }
 
 #[test]
 fn test_tilt_south() {
-    let mut platform: Platform = fs::read_to_string(Path::new("data/14.sample")).unwrap().parse().unwrap();
+    let mut platform: Platform = fs::read_to_string(Path::new("data/14.sample"))
+        .unwrap()
+        .parse()
+        .unwrap();
     let tilted = "
 .....#....
 ....#....#
@@ -375,16 +414,20 @@ O.#..O.#.#
 O....#....
 OO....OO..
 #OO..###..
-#OO.O#...O".parse().unwrap();
+#OO.O#...O"
+        .parse()
+        .unwrap();
 
     platform.tilt(Direction::South);
     assert_eq!(platform, tilted)
-
 }
 
 #[test]
 fn test_tilt_east() {
-    let mut platform: Platform = fs::read_to_string(Path::new("data/14.sample")).unwrap().parse().unwrap();
+    let mut platform: Platform = fs::read_to_string(Path::new("data/14.sample"))
+        .unwrap()
+        .parse()
+        .unwrap();
     let tilted = "
 ....O#....
 .OOO#....#
@@ -395,17 +438,20 @@ fn test_tilt_east() {
 ....O#..OO
 .........O
 #....###..
-#..OO#....".parse().unwrap();
+#..OO#...."
+        .parse()
+        .unwrap();
 
     platform.tilt(Direction::East);
     assert_eq!(platform, tilted)
-
 }
-
 
 #[test]
 fn test_cycle() {
-    let mut platform: Platform = fs::read_to_string(Path::new("data/14.sample")).unwrap().parse().unwrap();
+    let mut platform: Platform = fs::read_to_string(Path::new("data/14.sample"))
+        .unwrap()
+        .parse()
+        .unwrap();
     let cycled = "
 .....#....
 ....#...O#
@@ -416,9 +462,9 @@ fn test_cycle() {
 ....O#....
 ......OOOO
 #...O###..
-#..OO#....".parse().unwrap();
+#..OO#...."
+        .parse()
+        .unwrap();
     platform.cycle();
     assert_eq!(platform, cycled)
-
 }
-

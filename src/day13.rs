@@ -1,8 +1,8 @@
 use crate::challenge::DailyChallenge;
 use std::ops::Deref;
-use std::{fs, io};
 use std::path::Path;
 use std::str::FromStr;
+use std::{fs, io};
 
 #[derive(Default)]
 pub struct Day13;
@@ -41,17 +41,16 @@ trait Transpose {
     fn transpose(&self) -> Self;
 }
 
-impl<T> Transpose for Vec<Vec<T>> 
+impl<T> Transpose for Vec<Vec<T>>
 where
-    T: Copy
+    T: Copy,
 {
     fn transpose(&self) -> Self {
         let height = self.len();
         let width = self.first().map(Vec::len).unwrap_or(0);
-        let columns: Vec<Vec<T>> = (0..width).map(|col| {
-            (0..height).map(|row| self[row][col]).collect::<Vec<T>>()
-
-        }).collect();
+        let columns: Vec<Vec<T>> = (0..width)
+            .map(|col| (0..height).map(|row| self[row][col]).collect::<Vec<T>>())
+            .collect();
 
         columns
     }
@@ -59,16 +58,23 @@ where
 
 impl Transpose for Note {
     fn transpose(&self) -> Self {
-        Self { terrain: self.terrain.transpose() }
+        Self {
+            terrain: self.terrain.transpose(),
+        }
     }
 }
 
 impl FromStr for Note {
     type Err = Error;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let terrain = s.split_whitespace().map(|line| {
-            line.chars().map(|c| Terrain::try_from(c)).collect::<Result<Vec<Terrain>, Error>>()
-        }).collect::<Result<TerrainGrid, Error>>()?;
+        let terrain = s
+            .split_whitespace()
+            .map(|line| {
+                line.chars()
+                    .map(|c| Terrain::try_from(c))
+                    .collect::<Result<Vec<Terrain>, Error>>()
+            })
+            .collect::<Result<TerrainGrid, Error>>()?;
 
         Ok(Self { terrain })
     }
@@ -96,7 +102,8 @@ impl FromStr for Notes {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let notes = s.split("\n\n")
+        let notes = s
+            .split("\n\n")
             .map(|s| s.parse::<Note>())
             .collect::<Result<Vec<Note>, Error>>()?;
         Ok(Self(notes))
@@ -155,7 +162,6 @@ impl Solver for Part2 {
             for (row_a, row_b) in row_pairs {
                 let item_pairs = row_a.iter().zip(row_b.iter());
                 for (&aa, &bb) in item_pairs {
-
                     if aa != bb {
                         differences += 1;
                     }
@@ -219,17 +225,11 @@ fn test_from_string() {
 fn test_transpose() {
     use Terrain::*;
     let original = Note {
-        terrain: vec![
-            vec![Rock, Rock],
-            vec![Ash, Ash],
-        ]
+        terrain: vec![vec![Rock, Rock], vec![Ash, Ash]],
     };
 
     let transposed = Note {
-        terrain: vec![
-            vec![Rock, Ash],
-            vec![Rock, Ash],
-        ],
+        terrain: vec![vec![Rock, Ash], vec![Rock, Ash]],
     };
 
     assert_eq!(original.transpose(), transposed);
@@ -246,4 +246,3 @@ fn test_part2() {
     let notes = Notes::from_file(Path::new("data/13.sample")).unwrap();
     assert_eq!(Part2::summarize_notes(&notes), 400);
 }
-
